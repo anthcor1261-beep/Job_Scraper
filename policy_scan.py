@@ -150,7 +150,9 @@ def main():
     p=argparse.ArgumentParser(); p.add_argument('--recheck-only',action='store_true'); args=p.parse_args()
     health={}; discovered=[]
     if not args.recheck_only:
-        sources=[('HiringCafe',lambda:s.scrape_hiringcafe_recent(days=8)),('USAJOBS',s.scrape_usajobs_recent),('NEOGOV',lambda:s.scrape_governmentjobs_recent(days=8)),('LinkedIn',lambda:s._linkedin_search(list(s.LINKEDIN_SEARCH_TERMS),8*86400)[0])]
+        from direct_ats import BOARDS, scrape_board
+        sources=[(name + ' (direct ATS)', lambda slug=slug: scrape_board(slug)) for slug,name in BOARDS.items()]
+        sources += [('HiringCafe',lambda:s.scrape_hiringcafe_recent(days=8)),('USAJOBS',s.scrape_usajobs_recent),('NEOGOV',lambda:s.scrape_governmentjobs_recent(days=8)),('LinkedIn',lambda:s._linkedin_search(list(s.LINKEDIN_SEARCH_TERMS),8*86400,max_results=30)[0])]
         for name,fn in sources:
             try:
                 found=fn(); discovered.extend(found); health[name]={'count':len(found),'status':'returned results' if found else 'zero results; may be blocked or no matches'}

@@ -132,7 +132,7 @@ FRESH_JOB_LOOKBACK = timedelta(hours=24)
 # Single tokens are word-bounded; multi-word phrases match as substrings.
 def _build_title_re(terms: list) -> re.Pattern:
     return re.compile(
-        "|".join(re.escape(t) if (" " in t or "&" in t) else rf"\b{re.escape(t)}\b" for t in terms),
+        "|".join(re.escape(t) if (" " in t or "&" in t) else rf"\b{re.escape(t)}\b" for t in terms) or r"(?!)",
         re.IGNORECASE,
     )
 

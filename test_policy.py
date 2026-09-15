@@ -44,6 +44,16 @@ class PolicyTests(unittest.TestCase):
   self.assertTrue(scraper._same_job(a,b))
  def test_expired_metadata(self):
   self.assertEqual(p.inspect_page('Policy Analyst apply now <script>{"validThrough":"2020-01-01"}</script>',200,'https://example.com/jobs/1','Policy Analyst'),'closed')
+ def test_empty_exclusions(self):
+  import scrape_jobs as s
+  self.assertFalse(s._build_title_re([]).search("Policy Analyst"))
+  self.assertTrue(s.title_matches_keywords("Education Policy Analyst"))
+ def test_direct_board_filter(self):
+  from direct_ats import normalize
+  raw={'title':'Education Policy Analyst','content':'Education policy. Salary $70,000 - $90,000 per year','location':{'name':'Remote (in the U.S.)'},'absolute_url':'https://example.com/job/1'}
+  self.assertEqual(normalize(raw,'Example')['salary'],'$70,000 - $90,000')
+  raw['title']='Staff Software Engineer';self.assertIsNone(normalize(raw,'Example'))
+  raw['title']='Education Policy Analyst';raw['location']['name']='London, UK';self.assertIsNone(normalize(raw,'Example'))
  def test_public_url(self):
   with self.assertRaises(ValueError): p.public_url('file:///etc/passwd')
 if __name__=='__main__': unittest.main()
