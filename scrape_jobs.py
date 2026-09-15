@@ -2702,6 +2702,8 @@ def _job_urls(job: dict) -> list[str]:
     urls = []
     if job.get("url"):
         urls.append(job["url"])
+    if job.get("direct_url"):
+        urls.append(job["direct_url"])
     urls.extend(job.get("duplicate_urls") or [])
     return list(dict.fromkeys(u for u in urls if u))
 
