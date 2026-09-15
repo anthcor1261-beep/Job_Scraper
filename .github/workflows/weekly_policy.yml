@@ -1,0 +1,58 @@
+name: Weekly Policy Scan
+on:
+  schedule:
+    - cron: '23 13 * * 1'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: weekly-policy
+  cancel-in-progress: false
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    permissions:
+      contents: write
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Test shortlist rules
+        run: python -m unittest test_policy -v
+      - name: Search and validate
+        id: scan
+        continue-on-error: true
+        run: python -u policy_scan.py
+      - name: Save results
+        if: always()
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -f policy_data/all_jobs.json policy_data/policy_jobs.json index.html
+          git diff --cached --quiet || git commit -m 'Update weekly policy shortlist'
+          git push
+      - name: Prepare public dashboard
+        if: always()
+        run: |
+          mkdir -p public/policy_data
+          cp index.html public/index.html
+          cp policy_data/policy_jobs.json public/policy_data/policy_jobs.json
+      - uses: actions/configure-pages@v5
+        if: always()
+      - uses: actions/upload-pages-artifact@v3
+        if: always()
+        with:
+          path: public
+      - uses: actions/deploy-pages@v4
+        if: always()
+        id: deployment
+      - name: Report unsuccessful scan
+        if: steps.scan.outcome == 'failure'
+        run: exit 1
